@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Site repository: Sushant-sus/Sushant-sus.github.io (a GitHub user site,
+     served at the root of sushant-sus.github.io). The code lives separately
+     at github.com/Sushant-sus/AdaptUAP. If either moves, find-and-replace:
+       https://sushant-sus.github.io/
+       https://github.com/Sushant-sus/AdaptUAP
+     Everything else is self-contained. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ADAPT-UAP &middot; Spectrally weighted truncated ratio maximisation</title>
+<meta name="description" content="A data-free universal adversarial perturbation method: spectral layer weighting, a truncated ratio objective, multi-scale priors and a progressive budget. Preprint v1 with a pre-registered benchmark protocol.">
+<link rel="canonical" href="https://sushant-sus.github.io/">
+
+<!-- Google Scholar indexes a paper page from these; citation_pdf_url must be
+     absolute, so the Pages workflow substitutes the real base URL at build. -->
+<meta name="citation_title" content="ADAPT-UAP: Spectrally Weighted Truncated Ratio Maximisation for Data-Free Universal Adversarial Perturbations">
+<meta name="citation_author" content="Shrestha, Sushant">
+<meta name="citation_publication_date" content="2026/10">
+<meta name="citation_online_date" content="2026/10">
+<meta name="citation_pdf_url" content="https://sushant-sus.github.io/adapt_uap.pdf">
+<meta name="citation_abstract_html_url" content="https://sushant-sus.github.io/">
+<meta name="citation_technical_report_number" content="Version 1">
+<meta name="citation_keywords" content="universal adversarial perturbation; data-free attack; adversarial robustness; spectral analysis; reproducibility">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="ADAPT-UAP">
+<meta property="og:description" content="Spectrally weighted truncated ratio maximisation for data-free universal adversarial perturbations. Preprint v1, with a pre-registered benchmark protocol.">
+<meta property="og:url" content="https://sushant-sus.github.io/">
+<meta name="twitter:card" content="summary">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+/* Layout: one paper-measure column on a ruled ground; the perturbation field
+   in the masthead is drawn, not decorative, and the hazard table is the one
+   element allowed to break the measure. */
+:root {
+  color-scheme: light;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+
+  --ink:        #15181d;
+  --ink-soft:   #4a515c;
+  --ink-faint:  #7d8692;
+  --ground:     #f7f6f3;
+  --panel:      #ffffff;
+  --rule:       #ddd9d2;
+  --accent:     #1c6b73;
+  --accent-dim: #d9e8e8;
+  --flag:       #9a4a1f;
+  --flag-dim:   #f3e3d8;
+
+  --display: "Spectral", "Iowan Old Style", Georgia, serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink:        #e8e6e1;
+    --ink-soft:   #a8aeb8;
+    --ink-faint:  #767e8a;
+    --ground:     #101216;
+    --panel:      #171a1f;
+    --rule:       #2b2f36;
+    --accent:     #5fb3ba;
+    --accent-dim: #16343a;
+    --flag:       #d98a5c;
+    --flag-dim:   #3a2518;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ink:        #e8e6e1;
+  --ink-soft:   #a8aeb8;
+  --ink-faint:  #767e8a;
+  --ground:     #101216;
+  --panel:      #171a1f;
+  --rule:       #2b2f36;
+  --accent:     #5fb3ba;
+  --accent-dim: #16343a;
+  --flag:       #d98a5c;
+  --flag-dim:   #3a2518;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+img { max-width: 100%; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 1.0625rem;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 44rem;
+  margin-inline: auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+p { margin: 0 0 1.05em; }
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+/* ---- masthead ---- */
+.masthead { padding-block: 2.6rem 1.9rem; border-bottom: 1px solid var(--rule); }
+.kicker {
+  font-family: var(--mono);
+  font-size: .7rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 1.1rem;
+}
+h1 {
+  font-size: clamp(1.85rem, 5.4vw, 2.85rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -.021em;
+  text-wrap: balance;
+  margin: 0 0 .55rem;
+}
+.subtitle {
+  font-size: clamp(1.05rem, 2.6vw, 1.26rem);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--ink-soft);
+  text-wrap: balance;
+  margin: 0 0 1.5rem;
+}
+.byline { font-family: var(--mono); font-size: .8rem; color: var(--ink-soft); margin: 0 0 1.6rem; line-height: 1.75; }
+.byline strong { color: var(--ink); font-weight: 500; }
+
+.field-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.7rem; }
+#field { width: 112px; height: 112px; border: 1px solid var(--rule); display: block; flex: none; }
+.field-note { font-family: var(--mono); font-size: .68rem; line-height: 1.7; color: var(--ink-faint); min-width: 0; flex: 1 1 14rem; }
+
+.actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+.btn {
+  font-family: var(--mono); font-size: .76rem; letter-spacing: .04em;
+  padding: .62rem 1.05rem; border: 1px solid var(--accent); border-radius: 2px;
+  text-decoration: none; color: var(--accent); background: transparent;
+  display: inline-block;
+}
+.btn.solid { background: var(--accent); color: var(--ground); border-color: var(--accent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.solid { color: #0c0e11; } }
+:root[data-theme="dark"] .btn.solid { color: #0c0e11; }
+
+/* ---- status band ---- */
+.status {
+  background: var(--flag-dim);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.status .wrap { padding-block: 1.1rem; }
+.status p { margin: 0; font-size: .95rem; color: var(--ink); }
+.status .tag {
+  font-family: var(--mono); font-size: .68rem; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--flag); font-weight: 700;
+  display: block; margin-bottom: .3rem;
+}
+
+/* ---- sections ---- */
+section { padding-block: 2.5rem; border-bottom: 1px solid var(--rule); }
+section:last-of-type { border-bottom: none; }
+h2 {
+  font-family: var(--mono); font-size: .72rem; font-weight: 700;
+  letter-spacing: .15em; text-transform: uppercase; color: var(--ink-faint);
+  margin: 0 0 1.25rem;
+}
+h3 { font-size: 1.1rem; font-weight: 600; margin: 0 0 .35rem; letter-spacing: -.01em; }
+.lede { font-size: 1.14rem; line-height: 1.58; }
+
+/* ---- components ---- */
+.components { display: grid; gap: 1.5rem; }
+@media (min-width: 40rem) { .components { grid-template-columns: 1fr 1fr; gap: 1.6rem 2.2rem; } }
+.component { min-width: 0; }
+.component .letter {
+  font-family: var(--mono); font-size: .7rem; font-weight: 700; letter-spacing: .1em;
+  color: var(--accent); display: block; margin-bottom: .35rem;
+}
+.component p { font-size: .96rem; color: var(--ink-soft); margin: 0; }
+
+/* ---- table ---- */
+.table-scroll { overflow-x: auto; margin: 0 0 1rem; }
+table { border-collapse: collapse; width: 100%; min-width: 34rem; font-family: var(--mono); font-size: .78rem; }
+caption {
+  caption-side: top; text-align: left; font-family: var(--mono); font-size: .72rem;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint);
+  padding-bottom: .7rem;
+}
+th, td { padding: .46rem .7rem; text-align: right; border-bottom: 1px solid var(--rule); }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-weight: 500; color: var(--ink-faint); border-bottom: 1px solid var(--ink-faint); white-space: nowrap; }
+tbody td { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+tbody th { font-weight: 500; color: var(--ink); text-align: left; white-space: nowrap; }
+tr.collapsed th, tr.collapsed td { color: var(--ink); }
+tr.collapsed td.hit { color: var(--flag); font-weight: 700; }
+.verdict { font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+tr.collapsed .verdict { color: var(--flag); font-weight: 700; }
+.footnote { font-family: var(--mono); font-size: .71rem; line-height: 1.7; color: var(--ink-faint); margin: 0; }
+
+/* ---- protocol figures ---- */
+.figures { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.3rem 1.6rem; margin-bottom: 1.4rem; }
+@media (min-width: 34rem) { .figures { grid-template-columns: repeat(4, 1fr); } }
+.figure { min-width: 0; }
+.figure .n { font-family: var(--mono); font-size: 1.42rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; display: block; line-height: 1.2; }
+.figure .l { font-family: var(--mono); font-size: .66rem; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-top: .2rem; line-height: 1.5; }
+
+/* ---- plan list ---- */
+.plan { list-style: none; padding: 0; margin: 0; display: grid; gap: .9rem; }
+.plan li { display: grid; grid-template-columns: auto 1fr; gap: .8rem; align-items: baseline; font-size: .97rem; color: var(--ink-soft); }
+.plan .mark { font-family: var(--mono); font-size: .68rem; letter-spacing: .08em; color: var(--accent); white-space: nowrap; padding-top: .15em; }
+.plan .mark.done { color: var(--ink-faint); }
+.plan strong { color: var(--ink); font-weight: 600; }
+
+footer { padding-block: 2.2rem 3rem; font-family: var(--mono); font-size: .72rem; line-height: 1.8; color: var(--ink-faint); }
+footer a { color: var(--ink-soft); }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <p class="kicker">Preprint &middot; Version 1 &middot; October 2026</p>
+    <h1>ADAPT-UAP</h1>
+    <p class="subtitle">Spectrally weighted truncated ratio maximisation for data-free universal adversarial perturbations</p>
+    <p class="byline">
+      <strong>Sushant Shrestha</strong><br>
+      Independent Researcher, Kathmandu, Nepal<br>
+      sushant.901.sus@gmail.com
+    </p>
+
+    <div class="field-row">
+      <canvas id="field" width="224" height="224" aria-label="A multi-scale pseudo-semantic prior: flat colour blocks at three tile sizes, averaged."></canvas>
+      <p class="field-note">
+        Component C's crafting input, drawn live at 224&times;224.<br>
+        Three tile scales, 224, 64 and 32, averaged.<br>
+        No photograph is involved at any point.
+      </p>
+    </div>
+
+    <div class="actions">
+      <a class="btn solid" href="adapt_uap.pdf">Read the paper (PDF, 7pp)</a>
+      <a class="btn" href="https://github.com/Sushant-sus/AdaptUAP">Source and decision log</a>
+    </div>
+  </div>
+</header>
+
+<div class="status">
+  <div class="wrap">
+    <p>
+      <span class="tag">Status</span>
+      This version is the method, the baseline implementations and the pre-registered protocol. The benchmark is in progress. Its tables appear in the form they will be reported in, with every cell marked <em>pending</em>. No empirical claim about ADAPT-UAP's accuracy is made in this version.
+    </p>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <section>
+    <h2>The setting</h2>
+    <p class="lede">A data-free universal adversarial perturbation is one image-agnostic perturbation, bounded at 10/255 in the infinity norm, computed from a trained network's weights alone. It never sees a training or test image.</p>
+    <p>The setting matters twice over. An attacker who obtains a deployed checkpoint, from a model zoo or a shipped application, usually has no access to the proprietary data behind it, so this is the threat that describes the realistic case. And an attack working from weights alone cannot be exploiting a quirk of the data distribution, so whatever it exploits is a property of the learned function.</p>
+  </section>
+
+  <section>
+    <h2>Four components</h2>
+    <p>The data-free literature developed four separate levers: what to maximise, where in the network to maximise it, what to show the network while doing so, and how to manage the budget during the search. ADAPT-UAP pulls all four at once.</p>
+    <div class="components">
+      <div class="component">
+        <span class="letter">A &mdash; Spectral layer weighting</span>
+        <h3>Which layers the objective serves</h3>
+        <p>Each layer's weight tensor is unfolded and decomposed once, from the checkpoint alone. A scalar summary of its spectrum becomes a normalised weight. Three candidate summaries are implemented and reported, not chosen in advance.</p>
+      </div>
+      <div class="component">
+        <span class="letter">B &mdash; Truncated ratio maximisation</span>
+        <h3>A per-layer ratio, not a pooled one</h3>
+        <p>A temperature-softened power mean over the strongest retained activations, divided by the magnitude of what the rectifier discards, in logs, weighted per layer by Component A.</p>
+      </div>
+      <div class="component">
+        <span class="letter">C &mdash; Multi-scale priors</span>
+        <h3>Structure at three spatial scales</h3>
+        <p>Flat-block fields at 224, 64 and 32, tiled by repetition rather than interpolation, averaged and centred on the dataset mean image. A tile smaller than a deep layer's receptive field repeats across its whole input.</p>
+      </div>
+      <div class="component">
+        <span class="letter">D &mdash; Progressive budget</span>
+        <h3>Raised in stages, rescaled not clipped</h3>
+        <p>The budget climbs 2 &rarr; 4 &rarr; 8 &rarr; 10/255 over the run. At each transition the perturbation is rescaled, carrying the direction the previous stage bought into the larger budget instead of flattening it.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The one measured result so far</h2>
+    <p>Every method here reads intermediate activations through forward hooks. A hook receives a <em>reference</em> to a layer's output, not a copy, and PyTorch's vision models build their rectifiers with <code>inplace=True</code>. Wherever a convolution feeds a rectifier directly, the rectifier overwrites the convolution's output buffer before the forward pass returns, and any objective reading that tensor afterwards sees a value with every negative entry already removed.</p>
+    <p>For an objective built on the positive part this costs nothing, because rectifying twice is rectifying once. For one built on the <strong>negative</strong> part, which is what a truncated ratio uses as its denominator, it removes the term entirely.</p>
+
+    <div class="table-scroll">
+      <table>
+        <caption>Table I &middot; Activation-capture hazard</caption>
+        <thead>
+          <tr>
+            <th scope="col">Architecture</th>
+            <th scope="col">Convs</th>
+            <th scope="col">No neg.</th>
+            <th scope="col">As captured</th>
+            <th scope="col">Copied first</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="collapsed">
+            <th scope="row">VGG-16</th><td>13</td><td class="hit">13</td><td class="hit">&minus;207.23</td><td>+24.44</td><td class="verdict">collapsed</td>
+          </tr>
+          <tr class="collapsed">
+            <th scope="row">VGG-19</th><td>16</td><td class="hit">16</td><td class="hit">&minus;248.68</td><td>+27.53</td><td class="verdict">collapsed</td>
+          </tr>
+          <tr class="collapsed">
+            <th scope="row">AlexNet</th><td>5</td><td class="hit">5</td><td class="hit">&minus;82.89</td><td>+5.62</td><td class="verdict">collapsed</td>
+          </tr>
+          <tr>
+            <th scope="row">ResNet-152</th><td>155</td><td>0</td><td>+1191.51</td><td>+1191.51</td><td class="verdict">survives</td>
+          </tr>
+          <tr>
+            <th scope="row">GoogLeNet</th><td>59</td><td>0</td><td>&minus;606.94</td><td>&minus;606.94</td><td class="verdict">survives</td>
+          </tr>
+          <tr>
+            <th scope="row">DenseNet-121</th><td>120</td><td>0</td><td>+251.00</td><td>+251.00</td><td class="verdict">survives</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="footnote">The three collapsed values equal n&#8202;log(10&#8315;&#8313;) exactly, for n = 10, 12, 4. Batch normalisation between the convolution and the rectifier allocates a new tensor, which prevents it.</p>
+
+    <p style="margin-top:1.3rem">Three properties make this worth a table rather than a footnote. It is <strong>architecture-dependent</strong>, so a run that looks correct on one network says nothing about another. It is <strong>silent</strong>: the run completes, the loss decreases, and the fooling rate is plausible, because a weighting on a constant still produces a number. And it is <strong>invisible to the positive part</strong>, which is how an implementation passes every check built around the numerator.</p>
+    <p>The fix is one line, copying the tensor inside the hook, and it must preserve the autograd graph. The detection is equally cheap: compute the negative term once and test whether it equals the degenerate constant. The script that produces this table is released with the paper and needs no GPU, no dataset and no trained weights, because whether a rectifier operates in place is a property of the module rather than of the values flowing through it.</p>
+    <p>ADAPT-UAP's own denominator is subject to the same hazard. This table is as much a record of a mistake found in its own implementation as it is guidance for anyone else's, and it was found only because an ablation over the ratio's weighting refused to change any result.</p>
+  </section>
+
+  <section>
+    <h2>The pre-registered benchmark</h2>
+    <div class="figures">
+      <div class="figure"><span class="n">6</span><span class="l">Methods</span></div>
+      <div class="figure"><span class="n">8</span><span class="l">Architectures</span></div>
+      <div class="figure"><span class="n">5</span><span class="l">Seeds</span></div>
+      <div class="figure"><span class="n">240</span><span class="l">Cells</span></div>
+    </div>
+    <p>Evaluation uses the complete 50,000-image ImageNet validation set; a subsample of a few thousand carries a sampling error comparable to the differences being tested. Every method crafts and is scored through one frozen preprocessing pipeline, fingerprinted twice, so a reported fooling rate traces to the exact pipeline that produced it.</p>
+    <p>The comparisons, the statistical tests and the multiple-comparison correction are all fixed before the run: a paired bootstrap per architecture, Holm&ndash;Bonferroni across the family, and a Wilcoxon signed-rank across architectures. The three design questions the method's description does not settle are left to the ablation rather than decided by the author.</p>
+  </section>
+
+  <section>
+    <h2>What comes next</h2>
+    <ul class="plan">
+      <li><span class="mark done">done</span><span><strong>Six methods implemented</strong> in one harness, with the baselines' implementation notes published rather than left implicit.</span></li>
+      <li><span class="mark done">done</span><span><strong>Analysis stages wired.</strong> Transfer matrix, budget sweep, the pre-registered statistics and the eleven-arm ablation all run from finished records.</span></li>
+      <li><span class="mark">next</span><span><strong>The 240-cell run.</strong> Roughly 206 GPU-hours, gated on a GPU and the 6.3&nbsp;GB validation split, not on any remaining code.</span></li>
+      <li><span class="mark">then</span><span><strong>Version 2.</strong> Both tables populated, the transfer matrix, the budget curve and the RQ2 verdict whichever way it falls. The protocol will not be changed to accommodate the numbers.</span></li>
+    </ul>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p>
+    ADAPT-UAP &middot; Version 1, October 2026 &middot; Sushant Shrestha<br>
+    <a href="https://github.com/Sushant-sus/AdaptUAP">Source, decision log, frozen preprocessing harness and complete test suite</a> are released with this version.<br>
+    This page will be updated when version 2 lands.
+  </p>
+</footer>
+
+<script>
+(function () {
+  var c = document.getElementById("field");
+  if (!c || !c.getContext) return;
+  var ctx = c.getContext("2d");
+  var SIZE = 224, SCALES = [224, 64, 32], BLOCKS = 8;
+
+  // Deterministic generator, so the masthead is the same field on every load.
+  var seed = 20261025;
+  function rnd() {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  }
+
+  // One scale: a grid of flat colour cells, expanded so every block is exactly
+  // flat, then tiled by repetition up to full size. Never interpolated.
+  function build(scale) {
+    var tile = Math.min(scale, SIZE);
+    var cell = Math.ceil(tile / BLOCKS);
+    var grid = [];
+    for (var i = 0; i < BLOCKS * BLOCKS; i++) {
+      grid.push([rnd() * 255, rnd() * 255, rnd() * 255]);
+    }
+    var out = new Float32Array(SIZE * SIZE * 3);
+    for (var y = 0; y < SIZE; y++) {
+      var ty = y % tile, gy = Math.min(BLOCKS - 1, Math.floor(ty / cell));
+      for (var x = 0; x < SIZE; x++) {
+        var tx = x % tile, gx = Math.min(BLOCKS - 1, Math.floor(tx / cell));
+        var g = grid[gy * BLOCKS + gx], o = (y * SIZE + x) * 3;
+        out[o] = g[0]; out[o + 1] = g[1]; out[o + 2] = g[2];
+      }
+    }
+    return out;
+  }
+
+  var fields = SCALES.map(build);
+  var img = ctx.createImageData(SIZE, SIZE);
+  for (var p = 0; p < SIZE * SIZE; p++) {
+    for (var ch = 0; ch < 3; ch++) {
+      var sum = 0;
+      for (var f = 0; f < fields.length; f++) sum += fields[f][p * 3 + ch];
+      img.data[p * 4 + ch] = sum / fields.length;
+    }
+    img.data[p * 4 + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+})();
+</script>
+</body>
+</html>
